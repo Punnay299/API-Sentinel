@@ -1,4 +1,3 @@
-# database/connection.py
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker, declarative_base
 from sqlalchemy import event, text
@@ -12,7 +11,6 @@ engine = create_async_engine(
     connect_args={"check_same_thread": False},
 )
 
-# Enable WAL mode and foreign keys on every new connection
 @event.listens_for(engine.sync_engine, "connect")
 def set_sqlite_pragma(dbapi_connection, connection_record):
     if isinstance(dbapi_connection, sqlite3.Connection):
@@ -41,12 +39,21 @@ async def get_db():
             await session.close()
 
 async def init_db():
-    """Run schema.sql at startup."""
+    """Run schema.sql at startup. Also creates the bind for tables if needed."""
+    from database.models import Base
     schema_path = os.path.join(os.path.dirname(__file__), "schema.sql")
+    
+    # Let SQLAlchemy create the tables
     async with engine.begin() as conn:
-        with open(schema_path) as f:
-            sql = f.read()
-        for statement in sql.split(";"):
-            s = statement.strip()
-            if s:
-                await conn.execute(text(s))
+        await conn.run_sync(Base.metadata.create_all)
+        
+    # Also run the raw schema file just to be sure if there are any specific PRAGMAs or triggers
+    # that SQLAlchemy declarative metadata might have missed. If the tables exist it uses IF NOT EXISTS
+    async with engine.begin() as conn:
+        if os.path.exists(schema_path):
+            with open(schema_path) as f:
+                sql = f.read()
+            for statement in sql.split(";"):
+                s = statement.strip()
+                if s:
+                    await conn.execute(text(s))

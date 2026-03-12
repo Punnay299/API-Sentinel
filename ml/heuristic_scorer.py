@@ -62,5 +62,5 @@ class HeuristicScorer:
         return {
             "security_score": score,
             "risk_level": risk_level,
-            "deductions": deductions
+            "issues": deductions
         }

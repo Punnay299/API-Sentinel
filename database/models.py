@@ -1,7 +1,11 @@
 # database/models.py
-from sqlalchemy import Column, Text, Integer, Real, ForeignKey
+from sqlalchemy import Column, Text, Integer, REAL, ForeignKey
 from sqlalchemy.orm import relationship
 from database.connection import Base
+from datetime import datetime, timezone
+
+def utc_now() -> str:
+    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 class API(Base):
     __tablename__ = "apis"
@@ -16,7 +20,7 @@ class API(Base):
     last_deployment_at       = Column(Text)
     call_volume_30d          = Column(Integer, default=0)
     call_volume_7d           = Column(Integer, default=0)
-    error_rate               = Column(Real, default=0.0)
+    error_rate               = Column(REAL, default=0.0)
     response_time_p95_ms     = Column(Integer, default=0)
     unique_callers_30d       = Column(Integer, default=0)
     consecutive_error_days   = Column(Integer, default=0)
@@ -30,16 +34,16 @@ class API(Base):
     response_time_trend      = Column(Integer, default=0)
     data_sensitivity         = Column(Text, default="low")
     ml_status                = Column(Text, default="unknown")
-    ml_confidence            = Column(Real, default=0.0)
+    ml_confidence            = Column(REAL, default=0.0)
     ml_probabilities         = Column(Text, default="{}")
     ml_security_score        = Column(Integer, default=0)
     ml_risk_level            = Column(Text, default="unknown")
     ml_security_issues       = Column(Text, default="[]")
     ml_is_shadow             = Column(Integer, default=0)
-    ml_anomaly_score         = Column(Real, default=0.0)
+    ml_anomaly_score         = Column(REAL, default=0.0)
     ml_analyzed_at           = Column(Text)
-    discovered_at            = Column(Text)
-    updated_at               = Column(Text)
+    discovered_at            = Column(Text, default=utc_now)
+    updated_at               = Column(Text, default=utc_now, onupdate=utc_now)
     is_active                = Column(Integer, default=1)
     decommissioned_at        = Column(Text)
 
@@ -131,8 +135,8 @@ class MLModel(Base):
     id               = Column(Integer, primary_key=True, autoincrement=True)
     model_type       = Column(Text, nullable=False)
     version          = Column(Text, nullable=False)
-    accuracy         = Column(Real)
-    f1_score         = Column(Real)
+    accuracy         = Column(REAL)
+    f1_score         = Column(REAL)
     training_samples = Column(Integer)
     trained_at       = Column(Text)
     model_path       = Column(Text)
